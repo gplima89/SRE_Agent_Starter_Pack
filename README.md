@@ -26,6 +26,13 @@ mode. Choose **Use existing** to reuse a component in the same subscription.
 Monitoring ingestion/retention may incur charges. Keep workload reader grants off
 initially. Git, PowerShell, and the local HTML form are not required for this route.
 
+The Portal template grants **SRE Agent Administrator on the agent only** to the
+deploying user by default. Deployment requires scoped role-assignment write
+permission, even with workload readers off. For automation or another setup owner,
+supply the intended human user/group Entra object ID and matching principal type.
+See [agent user access](docs/portal-deployment.md#agent-user-access) for permissions,
+propagation, and existing-deployment recovery.
+
 The button works only after these files are published to the public GitHub repository.
 It currently follows `main`, not a release; use a reviewed immutable commit URL for
 reproducible deployments. Portal inputs do not update repository configuration files.

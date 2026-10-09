@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "8463993406216017628"
+      "templateHash": "5857903024686652070"
     },
     "description": "SRE Agent lab foundation. Review/Low access only. Creates monitoring by default or reuses existing Application Insights. Runtime readiness, model availability and cleanup are not verified. See docs/portal-deployment.md before deployment."
   },
@@ -136,6 +136,26 @@
       "metadata": {
         "description": "Keep false initially. true grants Reader and Log Analytics Reader to both agent identities on the named workload group. Requires role-assignment permission. Does not grant agent-user roles or write roles. false does not remove existing grants."
       }
+    },
+    "agentAdministratorPrincipalId": {
+      "type": "string",
+      "defaultValue": "[deployer().objectId]",
+      "minLength": 36,
+      "maxLength": 36,
+      "metadata": {
+        "description": "Microsoft Entra object ID of the user or group receiving SRE Agent Administrator on this agent only. Defaults to the deployment initiator for interactive Portal deployments. Automated deployments must supply a human user or group object ID, not the pipeline identity. Requires role-assignment write permission even when workload reader roles are false."
+      }
+    },
+    "agentAdministratorPrincipalType": {
+      "type": "string",
+      "defaultValue": "User",
+      "allowedValues": [
+        "User",
+        "Group"
+      ],
+      "metadata": {
+        "description": "Type of the administrator object ID: User for interactive deployment or an explicit human user; Group for an explicit Entra group. Service principals and managed identities are not supported for this bootstrap assignment."
+      }
     }
   },
   "variables": {
@@ -150,7 +170,8 @@
       "businessOwner": "[parameters('businessOwner')]",
       "technicalOwner": "[parameters('technicalOwner')]",
       "dataClassification": "[parameters('dataClassification')]"
-    }
+    },
+    "agentAdministratorRoleId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'e79298df-d852-4c6d-84f9-5d13249d1e55')]"
   },
   "resources": [
     {
@@ -192,6 +213,20 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('agentName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.App/agents', parameters('agentName'))]",
+      "name": "[guid(resourceId('Microsoft.App/agents', parameters('agentName')), parameters('agentAdministratorPrincipalId'), variables('agentAdministratorRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[variables('agentAdministratorRoleId')]",
+        "principalId": "[parameters('agentAdministratorPrincipalId')]",
+        "principalType": "[parameters('agentAdministratorPrincipalType')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'sre-foundation')]"
       ]
     },
     {

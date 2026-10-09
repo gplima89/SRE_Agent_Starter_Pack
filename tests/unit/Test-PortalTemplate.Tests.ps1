@@ -29,6 +29,11 @@ function Get-Resources {
 Assert-True ($template.'$schema' -eq 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#') 'resource-group Portal scope'
 Assert-True ($template.parameters.environment.defaultValue -eq 'dev') 'dev default'
 Assert-True (-not $template.parameters.assignWorkloadReaderRoles.defaultValue) 'reader opt-in defaults false'
+Assert-True ($template.parameters.agentAdministratorPrincipalId.defaultValue -ceq '[deployer().objectId]') 'interactive administrator defaults to deployment initiator'
+Assert-True ($template.parameters.agentAdministratorPrincipalId.minLength -eq 36 -and $template.parameters.agentAdministratorPrincipalId.maxLength -eq 36) 'administrator requires object ID length'
+Assert-True ($template.parameters.agentAdministratorPrincipalType.defaultValue -eq 'User') 'human user bootstrap default'
+Assert-True (($template.parameters.agentAdministratorPrincipalType.allowedValues -join ',') -eq 'User,Group') 'administrator beneficiary restricted to user or group'
+Assert-True ($template.parameters.agentAdministratorPrincipalId.metadata.description.Contains('Automated deployments must supply a human user or group object ID')) 'automation must explicitly choose human access beneficiary'
 Assert-True ($template.parameters.workloadResourceGroupName.defaultValue -eq '') 'workload input defaults empty for agent-group fallback'
 foreach ($name in @('applicationInsightsResourceGroupName', 'workloadResourceGroupName')) {
     $variableName = 'resolved' + [char]::ToUpperInvariant($name[0]) + $name.Substring(1)
@@ -90,6 +95,18 @@ Assert-True ($foundation.properties.parameters.applicationInsightsName -ceq "[if
 Assert-True ($foundation.properties.parameters.applicationInsightsResourceGroupName -ceq "[if(variables('createMonitoring'), createObject('value', resourceGroup().name), createObject('value', variables('resolvedApplicationInsightsResourceGroupName')))]") 'create group or resolved existing group passed lazily'
 Assert-True ($foundation.properties.parameters.workloadResourceGroupName.value -ceq "[variables('resolvedWorkloadResourceGroupName')]") 'resolved workload group passed to foundation'
 Assert-True ($foundation.properties.parameters.assignWorkloadReaderRoles.value -ceq "[parameters('assignWorkloadReaderRoles')]") 'reader assignments remain explicit opt-in'
+$administratorAssignments = @($template.resources | Where-Object type -EQ 'Microsoft.Authorization/roleAssignments')
+Assert-True ($administratorAssignments.Count -eq 1) 'one Portal administrator assignment'
+$administrator = $administratorAssignments[0]
+Assert-True (-not $administrator.ContainsKey('condition')) 'administrator access is not disabled with workload reader grants'
+Assert-True ($administrator.scope -ceq "[resourceId('Microsoft.App/agents', parameters('agentName'))]") 'administrator scope is this agent, not group or subscription'
+Assert-True ($administrator.apiVersion -eq '2022-04-01') 'stable role assignment API'
+Assert-True ($template.variables.agentAdministratorRoleId -ceq "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'e79298df-d852-4c6d-84f9-5d13249d1e55')]") 'verified built-in SRE Agent Administrator role'
+Assert-True ($administrator.properties.roleDefinitionId -ceq "[variables('agentAdministratorRoleId')]") 'fixed administrator role, no arbitrary role input'
+Assert-True ($administrator.properties.principalId -ceq "[parameters('agentAdministratorPrincipalId')]") 'administrator beneficiary is not an agent managed identity'
+Assert-True ($administrator.properties.principalType -ceq "[parameters('agentAdministratorPrincipalType')]") 'explicit user or group principal type'
+Assert-True ($administrator.name -ceq "[guid(resourceId('Microsoft.App/agents', parameters('agentName')), parameters('agentAdministratorPrincipalId'), variables('agentAdministratorRoleId'))]") 'deterministic assignment name includes agent principal and role'
+Assert-True ($administrator.dependsOn -contains "[resourceId('Microsoft.Resources/deployments', 'sre-foundation')]") 'administrator assignment waits for agent creation'
 foreach ($name in @('applicationInsightsName', 'applicationInsightsResourceGroupName')) {
     Assert-True ($foundation.properties.template.parameters[$name].minLength -eq 1) "foundation rejects blank reuse input: $name"
 }

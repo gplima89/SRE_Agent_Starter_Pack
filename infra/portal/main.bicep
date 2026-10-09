@@ -65,6 +65,15 @@ param workloadResourceGroupName string = ''
 @description('Keep false initially. true grants Reader and Log Analytics Reader to both agent identities on the named workload group. Requires role-assignment permission. Does not grant agent-user roles or write roles. false does not remove existing grants.')
 param assignWorkloadReaderRoles bool = false
 
+@description('Microsoft Entra object ID of the user or group receiving SRE Agent Administrator on this agent only. Defaults to the deployment initiator for interactive Portal deployments. Automated deployments must supply a human user or group object ID, not the pipeline identity. Requires role-assignment write permission even when workload reader roles are false.')
+@minLength(36)
+@maxLength(36)
+param agentAdministratorPrincipalId string = deployer().objectId
+
+@description('Type of the administrator object ID: User for interactive deployment or an explicit human user; Group for an explicit Entra group. Service principals and managed identities are not supported for this bootstrap assignment.')
+@allowed(['User', 'Group'])
+param agentAdministratorPrincipalType string = 'User'
+
 var createMonitoring = monitoringMode == 'Create new'
 var resolvedApplicationInsightsResourceGroupName = empty(applicationInsightsResourceGroupName) ? resourceGroup().name : applicationInsightsResourceGroupName
 var resolvedWorkloadResourceGroupName = empty(workloadResourceGroupName) ? resourceGroup().name : workloadResourceGroupName
@@ -126,6 +135,23 @@ module foundation '../bicep/main.bicep' = {
     tags: resourceTags
   }
   dependsOn: [applicationInsights]
+}
+
+resource agent 'Microsoft.App/agents@2026-01-01' existing = {
+  name: agentName
+}
+
+var agentAdministratorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'e79298df-d852-4c6d-84f9-5d13249d1e55')
+
+resource agentAdministrator 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(agent.id, agentAdministratorPrincipalId, agentAdministratorRoleId)
+  scope: agent
+  properties: {
+    roleDefinitionId: agentAdministratorRoleId
+    principalId: agentAdministratorPrincipalId
+    principalType: agentAdministratorPrincipalType
+  }
+  dependsOn: [foundation]
 }
 
 output agentId string = foundation.outputs.agentId
