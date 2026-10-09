@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Offline SRE Agent setup input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["setupVersion", "environment", "organizationName", "workloadName", "tenantId", "subscriptionId", "deploymentRegion", "resourceGroup", "agentName", "applicationInsightsResourceGroupName", "applicationInsightsName", "modelProvider", "modelName", "workloadResourceGroupName", "assignWorkloadReaderRoles", "costCenter", "businessOwner", "technicalOwner", "dataClassification"],
+  "properties": {
+    "setupVersion": {"const": "1.0"},
+    "environment": {"enum": ["dev", "test", "prod"]},
+    "organizationName": {"$ref": "#/definitions/slug"},
+    "workloadName": {"$ref": "#/definitions/slug"},
+    "tenantId": {"$ref": "#/definitions/uuid"},
+    "subscriptionId": {"$ref": "#/definitions/uuid"},
+    "deploymentRegion": {"type": "string", "pattern": "^[a-z][a-z0-9]{1,63}$"},
+    "resourceGroup": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$"},
+    "createAgentResourceGroup": {"type": "boolean", "default": false},
+    "agentName": {"type": "string", "pattern": "^[A-Za-z]([-A-Za-z0-9]{0,30}[A-Za-z0-9])$"},
+    "applicationInsightsResourceGroupName": {"type": "string", "pattern": "^[a-zA-Z0-9_().-]{1,90}$"},
+    "applicationInsightsName": {"type": "string", "pattern": "^[a-zA-Z0-9_().-]{1,260}$"},
+    "modelProvider": {"$ref": "#/definitions/text"},
+    "modelName": {"$ref": "#/definitions/text"},
+    "workloadResourceGroupName": {"type": "string", "pattern": "^[a-zA-Z0-9_().-]{0,90}$"},
+    "assignWorkloadReaderRoles": {"type": "boolean"},
+    "costCenter": {"$ref": "#/definitions/text"},
+    "businessOwner": {"$ref": "#/definitions/text"},
+    "technicalOwner": {"$ref": "#/definitions/text"},
+    "dataClassification": {"enum": ["public", "internal", "confidential", "restricted"]}
+  },
+  "definitions": {
+    "slug": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,19}$"},
+    "uuid": {"type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[^\\r\\n\\t]+$"}
+  }
+}

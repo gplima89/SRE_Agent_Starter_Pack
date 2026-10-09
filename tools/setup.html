@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <title>SRE Agent | Environment Setup</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme = param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; letter-spacing: 0; }
+    body { margin: 0; font: 16px/1.5 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; background: var(--cp-bg); color: var(--cp-text); }
+    header { background: var(--cp-surface); border-bottom: 1px solid var(--cp-border); }
+    .header-inner { max-width: 1120px; margin: auto; padding: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+    h1 { font-size: 24px; margin: 0; font-weight: 650; }
+    .eyebrow { color: var(--cp-accent); font-size: 12px; font-weight: 700; text-transform: uppercase; margin: 0 0 4px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    button { min-height: 44px; padding: 8px 16px; border: 1px solid var(--cp-border-strong); border-radius: 6px; font: inherit; color: var(--cp-text); background: var(--cp-surface); cursor: pointer; }
+    button:hover { background: var(--cp-surface-soft); }
+    button.primary { background: var(--cp-accent); color: var(--cp-accent-fg); border-color: var(--cp-accent); }
+    button.primary:hover { background: var(--cp-accent-hover); }
+    :focus-visible { outline: 3px solid var(--cp-link); outline-offset: 3px; }
+    main { max-width: 1120px; padding: 24px; margin: auto; }
+    .notice { border-left: 4px solid var(--cp-accent); padding: 12px 16px; background: var(--cp-accent-soft); margin-bottom: 24px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 40px; align-items: start; }
+    fieldset { border: 0; border-bottom: 1px solid var(--cp-border); margin: 0 0 24px; padding: 0 0 24px; min-width: 0; }
+    legend { font-size: 20px; font-weight: 650; margin-bottom: 16px; }
+    .section-number { display: inline-block; color: var(--cp-accent); font-size: 14px; margin-right: 12px; }
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+    input:not([type="checkbox"]), select { width: 100%; min-height: 44px; border: 1px solid var(--cp-border-strong); border-radius: 6px; background: var(--cp-surface); color: var(--cp-text); padding: 10px 12px; font: inherit; }
+    input::placeholder { color: var(--cp-text-muted); opacity: 1; }
+    .help { font-size: 13px; color: var(--cp-text-muted); margin: 6px 0 0; overflow-wrap: anywhere; }
+    .error { min-height: 20px; margin: 4px 0 0; font-size: 13px; color: var(--cp-danger); }
+    [aria-invalid="true"] { border-color: var(--cp-danger) !important; }
+    .wide { grid-column: 1 / -1; }
+    .check-label { display: flex; gap: 12px; align-items: flex-start; }
+    input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; margin: 2px 0; accent-color: var(--cp-accent); }
+    aside { border-left: 1px solid var(--cp-border); padding-left: 24px; position: sticky; top: 24px; overflow-wrap: anywhere; }
+    aside h2 { font-size: 17px; margin: 0 0 12px; }
+    dl { margin: 0; }
+    dt { font-size: 12px; color: var(--cp-text-muted); margin-top: 16px; }
+    dd { margin: 4px 0; font-size: 14px; }
+    .status { color: var(--cp-accent); font-weight: 600; }
+    .small { font-size: 13px; color: var(--cp-text-muted); }
+    #message { margin: 16px 0; overflow-wrap: anywhere; }
+    .form-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .section-action { margin-bottom: 20px; }
+    @media (max-width: 850px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 24px; } aside { position: static; border-left: 0; border-top: 1px solid var(--cp-border); padding: 24px 0; } }
+    @media (max-width: 540px) { .fields { grid-template-columns: minmax(0, 1fr); } main, .header-inner { padding: 20px 16px; } .actions { width: 100%; } .actions button { flex: 1; } h1 { font-size: 22px; } }
+  </style>
+</head>
+<body>
+  <header><div class="header-inner"><div><p class="eyebrow">SRE Agent Starter Kit</p><h1>Environment Setup</h1></div><div class="actions"><button type="button" id="load">Load Configuration</button><button type="button" id="reset">Clear Form</button></div></div></header>
+  <main>
+    <div class="notice">Configuration only. No Azure resources will be created. Do not enter passwords, tokens, or connection strings.</div>
+    <div class="layout">
+      <form id="setup" novalidate autocomplete="off">
+        <div id="sections"></div>
+        <div id="message" role="status" aria-live="polite"></div>
+        <div class="form-footer"><button class="primary" type="submit">Save Configuration</button><span class="small">Azure availability and permissions are not checked.</span></div>
+      </form>
+      <aside aria-label="Configuration review">
+        <h2>Target Review</h2>
+        <dl><dt>Environment</dt><dd id="review-environment"></dd><dt>Subscription</dt><dd id="review-subscriptionId"></dd><dt>Tenant</dt><dd id="review-tenantId"></dd><dt>Resource group action</dt><dd id="review-groupAction"></dd><dt>Agent resource group</dt><dd id="review-resourceGroup"></dd><dt>Agent</dt><dd id="review-agentName"></dd><dt>Region</dt><dd id="review-deploymentRegion"></dd><dt>Workload grants</dt><dd id="review-grants"></dd><dt>Operating mode</dt><dd>Review / Low access</dd><dt>Deployment readiness</dt><dd class="status">Not checked</dd></dl>
+        <p class="small">Subscription selection must be explicit when deploying. These settings do not change your signed-in account.</p>
+      </aside>
+    </div>
+    <input id="file" type="file" accept=".json,application/json" hidden>
+  </main>
+  <script>
+    'use strict';
+    const uuid = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
+    const slug = '[a-z][a-z0-9-]{1,19}';
+    const resourceGroup = '[a-zA-Z0-9_().-]{1,90}';
+    const sections = [
+      ['Deployment Target', [
+        {name:'environment', label:'Environment', options:['dev','test','prod'], initial:'dev', help:'Start with dev for a lab. prod still requires organizational approval and deployment readiness checks.'},
+        {name:'tenantId', label:'Microsoft Entra tenant ID', pattern:uuid, example:'11111111-1111-1111-1111-111111111111', help:'Required GUID. In Azure portal, open Microsoft Entra ID > Overview > Tenant ID.', format:'Enter a tenant GUID in the displayed format.'},
+        {name:'subscriptionId', label:'Azure subscription ID', pattern:uuid, example:'22222222-2222-2222-2222-222222222222', help:'Required GUID. In Azure portal, open Subscriptions and select the intended subscription. Use its ID, not its display name.', format:'Enter a subscription GUID in the displayed format.'},
+        {name:'createAgentResourceGroup', label:'Create a new agent resource group', checkbox:true, help:'Off uses an existing group. On prepares a subscription-level deployment to create the named group in the selected region. Requires permission to create groups; does not grant subscription Owner. Nothing is created by this form.'},
+        {name:'resourceGroup', label:'Agent resource group name', pattern:'[a-z][a-z0-9-]{1,62}', example:'rg-contoso-orders-sre-dev', help:'Required in both modes. Kit convention: 2-63 lowercase letters, numbers or hyphens; start with a letter.', format:'Use 2-63 lowercase letters, numbers or hyphens, starting with a letter.'}
+      ]],
+      ['Names and Location', [
+        {name:'organizationName', label:'Organization label', pattern:slug, example:'contoso', help:'2-20 lowercase letters, numbers or hyphens; start with a letter. Used to suggest names, not to create an organization.', format:'Use a 2-20 character lowercase label, starting with a letter.'},
+        {name:'workloadName', label:'Workload label', pattern:slug, example:'orders', help:'Short name for the application being supported. Same format as organization label.', format:'Use a 2-20 character lowercase label, starting with a letter.'},
+        {name:'agentName', label:'Agent resource name', pattern:'[A-Za-z]([-A-Za-z0-9]{0,30}[A-Za-z0-9])', example:'contoso-orders-sre-dev', help:'2-32 letters, numbers or hyphens. Start with a letter and end with a letter or number. Changing a deployed name can create a new resource.', format:'Use 2-32 characters; start with a letter and end with a letter or number.'},
+        {name:'deploymentRegion', label:'Azure region identifier', pattern:'[a-z][a-z0-9]{1,63}', example:'eastus2', help:'Canonical identifier, not "East US 2". Example only: confirm SRE Agent and model availability and data residency in Azure before choosing.', format:'Use a lowercase region identifier, for example eastus2.'}
+      ]],
+      ['Existing Monitoring', [
+        {name:'applicationInsightsResourceGroupName', label:'Application Insights resource group', pattern:resourceGroup, example:'rg-contoso-observability', help:'Existing group in the selected subscription containing the agent telemetry component. Not necessarily the agent group.', format:'Use the existing resource group name (1-90 letters, numbers, underscores, parentheses, periods or hyphens).'},
+        {name:'applicationInsightsName', label:'Application Insights component name', pattern:'[a-zA-Z0-9_().-]{1,260}', example:'appi-contoso-sre', help:'Existing component name, not an ID or connection string. It will be reused, not created. This does not configure workload log connectors.', format:'Use the component name, not a resource ID or connection string.'}
+      ]],
+      ['Model Selection', [
+        {name:'modelProvider', label:'Confirmed model provider identifier', max:128, help:'Exact nonempty identifier confirmed in the SRE Agent creation experience for this subscription and region. No universal accepted-value list is verified by this offline tool.', format:'Enter the confirmed identifier (1-128 characters; no tabs or line breaks).'},
+        {name:'modelName', label:'Confirmed model identifier', max:128, help:'Exact model identifier supported by that provider and region, not a display label. Obtain the accepted value from Azure; this form cannot verify availability.', format:'Enter the confirmed identifier (1-128 characters; no tabs or line breaks).'}
+      ]],
+      ['Workload Access', [
+        {name:'workloadResourceGroupName', label:'Existing workload resource group (optional)', pattern:'[a-zA-Z0-9_().-]{0,90}', optional:true, example:'rg-contoso-orders-dev', help:'Leave empty for no workload scope. Otherwise use one existing group in the same subscription, separate from the agent group.', format:'Use one resource group name or leave empty.'},
+        {name:'assignWorkloadReaderRoles', label:'Grant workload reader permissions', checkbox:true, help:'Off is recommended initially. On grants Reader and Log Analytics Reader to both agent identities on the workload group and requires role-assignment permission. Off does not revoke existing grants.'}
+      ]],
+      ['Ownership and Classification', [
+        {name:'costCenter', label:'Cost center', max:128, example:'CC-1234', help:'Approved non-sensitive cost allocation label. Does not impose a spending limit.', format:'Enter a nonempty label of at most 128 characters.'},
+        {name:'businessOwner', label:'Business owner team', max:128, example:'commerce-team', help:'Accountable team label, not personal contact details. Does not grant access.', format:'Enter a nonempty team label of at most 128 characters.'},
+        {name:'technicalOwner', label:'Technical owner team', max:128, example:'platform-operations', help:'Team responsible for operations. Label only, not an access assignment.', format:'Enter a nonempty team label of at most 128 characters.'},
+        {name:'dataClassification', label:'Data classification', options:['public','internal','confidential','restricted'], initial:'internal', help:'Use the organization-approved category. This tag does not enforce data protection.'}
+      ]]
+    ];
+    const fields = sections.flatMap(section => section[1]);
+    const controls = new Map();
+    const errors = new Map();
+    const form = document.getElementById('setup');
+    const message = document.getElementById('message');
+    sections.forEach(([title, definitions], sectionIndex) => {
+      const group = document.createElement('fieldset');
+      const legend = document.createElement('legend');
+      const number = document.createElement('span');
+      number.className = 'section-number'; number.textContent = String(sectionIndex + 1).padStart(2, '0');
+      legend.append(number, document.createTextNode(title)); group.append(legend);
+      if (sectionIndex === 1) {
+        const suggest = document.createElement('button'); suggest.type = 'button'; suggest.textContent = 'Suggest Resource Names'; suggest.className = 'section-action';
+        suggest.addEventListener('click', () => {
+          const organization = controls.get('organizationName').value.trim();
+          const workload = controls.get('workloadName').value.trim();
+          if (!new RegExp(`^${slug}$`).test(organization) || !new RegExp(`^${slug}$`).test(workload)) { message.textContent = 'Enter valid organization and workload labels first.'; return; }
+          const environment = controls.get('environment').value;
+          controls.get('agentName').value = `${organization}-${workload}-sre-${environment}`.slice(0,32).replace(/-$/, '');
+          controls.get('resourceGroup').value = `rg-${organization}-${workload}-sre-${environment}`;
+          message.textContent = 'Names suggested. Review the resource group action and name; no resources were created.';
+          updateReview();
+        });
+        group.append(suggest);
+      }
+      const grid = document.createElement('div'); grid.className = 'fields';
+      definitions.forEach(field => {
+        const container = document.createElement('div'); if (field.checkbox) container.className = 'wide';
+        const label = document.createElement('label'); label.htmlFor = field.name; label.textContent = field.label;
+        const control = document.createElement(field.options ? 'select' : 'input'); control.id = field.name; control.name = field.name;
+        if (field.options) field.options.forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; control.append(option); });
+        else control.type = field.checkbox ? 'checkbox' : 'text';
+        if (!field.checkbox && !field.optional) control.required = true;
+        if (field.example) control.placeholder = field.example;
+        if (field.max) control.maxLength = field.max;
+        const help = document.createElement('p'); help.id = `${field.name}-help`; help.className = 'help'; help.textContent = field.help;
+        const error = document.createElement('p'); error.id = `${field.name}-error`; error.className = 'error';
+        control.setAttribute('aria-describedby', `${help.id} ${error.id}`);
+        if (field.checkbox) { label.className = 'check-label'; label.prepend(control); container.append(label, help, error); }
+        else container.append(label, control, help, error);
+        controls.set(field.name, control); errors.set(field.name, error);
+        grid.append(container);
+      });
+      group.append(grid); document.getElementById('sections').append(group);
+    });
+    function currentInput() {
+      const result = {setupVersion:'1.0'};
+      fields.forEach(field => { const control = controls.get(field.name); result[field.name] = field.checkbox ? control.checked : control.value; });
+      return result;
+    }
+    function validate(input) {
+      if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Configuration must be a JSON object.');
+      if (!Object.hasOwn(input, 'createAgentResourceGroup')) input.createAgentResourceGroup = false;
+      const accepted = new Set(['setupVersion', ...fields.map(field => field.name)]);
+      if (Object.keys(input).some(key => !accepted.has(key)) || Object.keys(input).length !== accepted.size || input.setupVersion !== '1.0') throw new Error('Use a setupVersion 1.0 configuration with only the expected fields.');
+      const issues = new Map();
+      fields.forEach(field => {
+        const value = input[field.name];
+        if (!Object.hasOwn(input, field.name) || typeof value !== (field.checkbox ? 'boolean' : 'string')) throw new Error(`Incorrect field type: ${field.name}.`);
+        if (field.checkbox) return;
+        if (value !== value.trim()) issues.set(field.name, 'Remove leading or trailing spaces.');
+        else if (!field.optional && !value) issues.set(field.name, 'This field is required.');
+        else if (field.options && !field.options.includes(value)) issues.set(field.name, 'Choose a value from the list.');
+        else if (field.pattern && !new RegExp(`^${field.pattern}$`).test(value)) issues.set(field.name, field.format);
+        else if (field.max && (value.length > field.max || /[\r\n\t]/.test(value))) issues.set(field.name, field.format);
+        if (['tenantId','subscriptionId'].includes(field.name) && value === '00000000-0000-0000-0000-000000000000') issues.set(field.name, 'Use a real ID, not an all-zero GUID.');
+      });
+      if (input.workloadResourceGroupName && input.workloadResourceGroupName.toLowerCase() === input.resourceGroup.toLowerCase()) issues.set('workloadResourceGroupName', 'Agent and workload groups must be separate.');
+      if (input.assignWorkloadReaderRoles && !input.workloadResourceGroupName) issues.set('workloadResourceGroupName', 'Reader grants require a workload resource group.');
+      if (input.createAgentResourceGroup && input.applicationInsightsResourceGroupName.toLowerCase() === input.resourceGroup.toLowerCase()) issues.set('applicationInsightsResourceGroupName', 'Existing monitoring must be in a different group from the new agent group.');
+      return issues;
+    }
+    function showIssues(issues) {
+      fields.forEach(field => { const error = issues.get(field.name) || ''; errors.get(field.name).textContent = error; controls.get(field.name).setAttribute('aria-invalid', String(Boolean(error))); });
+    }
+    function updateReview() {
+      ['environment','tenantId','subscriptionId','resourceGroup','agentName','deploymentRegion'].forEach(name => { document.getElementById(`review-${name}`).textContent = controls.get(name).value || 'Not provided'; });
+      document.getElementById('review-grants').textContent = controls.get('assignWorkloadReaderRoles').checked ? 'Reader + Log Analytics Reader (opt-in)' : 'No new grants';
+      const createGroup = controls.get('createAgentResourceGroup').checked;
+      document.getElementById('review-groupAction').textContent = createGroup ? 'Create new (at deployment)' : 'Use existing';
+      document.getElementById('resourceGroup-help').textContent = createGroup
+        ? 'Enter a new, unused group name, or use Suggest Resource Names below. Required: 2-63 lowercase letters, numbers or hyphens, starting with a letter. Creation uses the selected region. Azure name collisions are not checked here.'
+        : 'Enter a group that already exists in the selected subscription. Required: 2-63 lowercase letters, numbers or hyphens, starting with a letter.';
+    }
+    function resetForm() {
+      fields.forEach(field => { const control = controls.get(field.name); if (field.checkbox) control.checked = false; else control.value = field.initial || ''; });
+      showIssues(new Map()); updateReview(); message.textContent = '';
+    }
+    form.addEventListener('input', () => { showIssues(new Map()); message.textContent = ''; updateReview(); });
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      const input = currentInput(); const issues = validate(input); showIssues(issues);
+      if (issues.size) { message.textContent = `Check ${issues.size} highlighted field(s).`; controls.get(issues.keys().next().value).focus(); return; }
+      const blob = new Blob([JSON.stringify(input, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob);
+      const link = document.createElement('a'); link.href = url; link.download = `sre-setup-${input.environment}.json`; document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      message.textContent = 'Configuration download requested. Next, generate the technical files using the setup guide. Nothing was deployed.';
+    });
+    document.getElementById('load').addEventListener('click', () => document.getElementById('file').click());
+    document.getElementById('file').addEventListener('change', async event => {
+      const file = event.target.files[0]; if (!file) return;
+      try {
+        if (file.size > 65536) throw new Error('Configuration must be smaller than 64 KB.');
+        const input = JSON.parse(await file.text()); const issues = validate(input);
+        if (issues.size) throw new Error('Configuration contains invalid values. Current form was not changed.');
+        fields.forEach(field => { const control = controls.get(field.name); if (field.checkbox) control.checked = input[field.name]; else control.value = input[field.name]; });
+        showIssues(new Map()); updateReview(); message.textContent = 'Configuration loaded. Azure availability and permissions remain unchecked.';
+      } catch (error) { message.textContent = error.message; }
+      finally { event.target.value = ''; }
+    });
+    document.getElementById('reset').addEventListener('click', () => { if (confirm('Clear all entered settings?')) resetForm(); });
+    resetForm();
+  </script>
+</body>
+</html>

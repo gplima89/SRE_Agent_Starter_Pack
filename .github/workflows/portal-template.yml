@@ -1,0 +1,23 @@
+name: Portal template checks
+on:
+  push:
+    paths: ['infra/**', 'scripts/powershell/**', 'tests/unit/**', 'README.md', '.github/workflows/portal-template.yml']
+  pull_request:
+    paths: ['infra/**', 'scripts/powershell/**', 'tests/unit/**', 'README.md', '.github/workflows/portal-template.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install pinned local Bicep compiler
+        run: az bicep install --version v0.43.8
+      - name: Validate Portal artifact and safety
+        shell: pwsh
+        run: ./tests/unit/Test-PortalTemplate.Tests.ps1
+      - name: Validate infrastructure baseline
+        shell: pwsh
+        run: ./tests/unit/Test-Infrastructure.Tests.ps1

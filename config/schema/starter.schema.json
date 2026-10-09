@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/gplima89/SRE_Agent_Starter_Pack/config/schema/starter.schema.json",
+  "title": "Starter kit intent configuration, not an Azure API payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "organizationName", "workloadName", "environment", "tenantId", "subscriptionId", "deploymentRegion", "resourceGroup", "agentName", "logAnalyticsWorkspace", "applicationInsightsInstance", "githubOrganization", "githubRepository", "azureDevOpsOrganization", "azureDevOpsProject", "incidentManagementPlatform", "notificationChannel", "deploymentMode", "agentOperatingStage", "runMode", "allowedAzureScopes", "allowedActions", "tags", "costCenter", "businessOwner", "technicalOwner", "dataClassification", "retentionDays", "automationsEnabled", "modelProvider", "modelName"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "organizationName": {"$ref": "#/definitions/slug"},
+    "workloadName": {"$ref": "#/definitions/slug"},
+    "environment": {"enum": ["dev", "test", "prod"]},
+    "tenantId": {"$ref": "#/definitions/optionalUuid"},
+    "subscriptionId": {"$ref": "#/definitions/optionalUuid"},
+    "deploymentRegion": {"type": "string", "pattern": "^([a-z][a-z0-9]*)?$"},
+    "resourceGroup": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$"},
+    "agentName": {"type": "string", "pattern": "^[A-Za-z]([-A-Za-z0-9]{0,30}[A-Za-z0-9])$"},
+    "logAnalyticsWorkspace": {"type": "string"},
+    "applicationInsightsInstance": {"type": "string"},
+    "githubOrganization": {"type": "string"},
+    "githubRepository": {"type": "string"},
+    "azureDevOpsOrganization": {"type": "string"},
+    "azureDevOpsProject": {"type": "string"},
+    "incidentManagementPlatform": {"const": "None"},
+    "notificationChannel": {"const": ""},
+    "deploymentMode": {"enum": ["bicep", "powershell", "bash", "azd", "terraform"]},
+    "agentOperatingStage": {"enum": [0, 1]},
+    "runMode": {"const": "Review"},
+    "automationsEnabled": {"const": false},
+    "allowedAzureScopes": {
+      "type": "array", "maxItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^/subscriptions/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/resourceGroups/[a-zA-Z0-9_().-]{1,90}$"}
+    },
+    "allowedActions": {"type": "array", "maxItems": 0},
+    "tags": {
+      "type": "object", "additionalProperties": false,
+      "required": ["environment", "managedBy", "workload", "costCenter", "businessOwner", "technicalOwner", "dataClassification"],
+      "properties": {
+        "environment": {"enum": ["dev", "test", "prod"]},
+        "managedBy": {"const": "azure-sre-agent-starter"},
+        "workload": {"$ref": "#/definitions/slug"},
+        "costCenter": {"type": "string", "minLength": 1},
+        "businessOwner": {"type": "string", "minLength": 1},
+        "technicalOwner": {"type": "string", "minLength": 1},
+        "dataClassification": {"enum": ["public", "internal", "confidential", "restricted"]}
+      }
+    },
+    "costCenter": {"type": "string", "minLength": 1},
+    "businessOwner": {"type": "string", "minLength": 1},
+    "technicalOwner": {"type": "string", "minLength": 1},
+    "dataClassification": {"enum": ["public", "internal", "confidential", "restricted"]},
+    "retentionDays": {"type": ["integer", "null"], "minimum": 1, "maximum": 730},
+    "modelProvider": {"type": "string", "maxLength": 128},
+    "modelName": {"type": "string", "maxLength": 128},
+    "applicationInsightsResourceGroupName": {"type": "string", "pattern": "^[a-zA-Z0-9_().-]{1,90}$"},
+    "assignWorkloadReaderRoles": {"type": "boolean"},
+    "createAgentResourceGroup": {"type": "boolean", "default": false}
+  },
+  "definitions": {
+    "slug": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,19}$"},
+    "optionalUuid": {"type": "string", "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})?$"}
+  }
+}
