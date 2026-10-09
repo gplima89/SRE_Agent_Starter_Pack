@@ -17,5 +17,4 @@ artifacts/
 exports/
 logs/
 config/local/
-.azure/*
-!.azure/deployment-plan.md
+.azure/
