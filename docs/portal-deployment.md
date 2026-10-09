@@ -50,14 +50,18 @@ and [contract verification](contract-verification.md) for the unresolved gates.
 | Cost Center, Business Owner, Technical Owner | Approved non-sensitive team/allocation labels, not credentials or role assignments. |
 | Data Classification | Classification tag; does not enforce protection. |
 | Monitoring Mode | Create new (default) or Use existing. New resources use the agent group and Location. |
-| Application Insights Resource Group Name / Name | Leave empty for Create new; ignored in that mode. Both are required for Use existing and identify a component in the selected subscription. No connection string input. |
+| Application Insights Resource Group Name / Name | Ignored in Create new mode. For Use existing, the component name is required; an empty resource group name uses the SRE agent group in the selected subscription. No connection string input. |
 | Model Provider / Model Name | Exact verified identifiers for this subscription/region. No guessed defaults or availability allowlist. |
-| Workload Resource Group Name | Optional single existing group, separate from the agent group; empty means no workload scope. |
-| Assign Workload Reader Roles | Defaults false. Approved true requires a nonempty workload group and grants only Reader/Log Analytics Reader to both identities there. |
+| Workload Resource Group Name | Single existing group in the selected subscription. Empty uses the SRE agent group; an explicit name selects that group instead. |
+| Assign Workload Reader Roles | Defaults false. Approved true grants only Reader/Log Analytics Reader to both identities on the resolved workload group, including the agent group when the name is empty. |
 
-The standard form does not enforce every cross-field rule from the offline setup
-validator. You must reject the agent group as a workload group and a reader opt-in
-with no workload group before deploying. ARM syntax validation is not policy approval.
+The Portal wrapper resolves empty group names at deployment time, using the
+resource group selected for the SRE agent. The resolved workload group is included
+in the agent's managed-resource scope even when reader-role assignment is false;
+that option controls only the optional RBAC grants. Review the resolved scope before
+deploying. The offline setup validator retains its separate-group and empty-scope
+rules; it does not implement these Portal fallbacks. ARM syntax validation is not
+policy approval.
 
 ## Monitoring Choices
 
@@ -88,9 +92,11 @@ has not been verified. Reject this route if those settings violate organizationa
 policy. No additional monitoring RBAC grants or workload log connectors are added.
 
 **Use existing** deploys neither monitoring resource and does not change existing
-tags, workspace linkage, network settings, retention, or pricing. Enter both existing
-component names; the nested foundation rejects empty names. A new empty agent group
-cannot contain an existing component. Existing telemetry remains externally owned.
+tags, workspace linkage, network settings, retention, or pricing. Enter the existing
+component name and, if it is outside the agent group, its resource group name.
+Leaving the group name empty looks up that component in the agent group; it does
+not create it. A new empty agent group cannot contain an existing component.
+Existing telemetry remains externally owned.
 Changing from Create new to Use existing in an incremental deployment does not
 delete the previously created monitoring or move historical data.
 
@@ -112,8 +118,8 @@ resources. Newly created monitoring is owned by this lab deployment, but deletio
 requires owner approval and a check for other consumers and retention obligations.
 Deleting a dedicated agent group also deletes monitoring inside it, including any
 reused component located there; never treat reused resources as disposable.
-Optional workload role assignments are outside the agent group and
-need separate ownership review. Redeploying with false does not remove existing
+Optional workload role assignments target the resolved workload group, which may
+be the agent group, and need ownership review. Redeploying with false does not remove existing
 assignments; an incremental ARM deployment is not a cleanup operation.
 
 ## Configuration And Publication

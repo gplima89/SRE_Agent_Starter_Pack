@@ -39,11 +39,11 @@ param technicalOwner string
 @allowed(['public', 'internal', 'confidential', 'restricted'])
 param dataClassification string = 'internal'
 
-@description('Create new creates a billable Log Analytics workspace and Application Insights in the agent group. Use existing leaves monitoring unchanged and requires both existing component inputs below. Review costs, network policy and cleanup ownership first.')
+@description('Create new creates a billable Log Analytics workspace and Application Insights in the agent group. Use existing leaves monitoring unchanged and requires an existing component name; an empty component resource group uses the agent group. Review costs, network policy and cleanup ownership first.')
 @allowed(['Create new', 'Use existing'])
 param monitoringMode string = 'Create new'
 
-@description('Use existing only: Application Insights resource group in the selected subscription. Example: rg-contoso-observability. Required in reuse mode; ignored in Create new mode.')
+@description('Use existing only: Application Insights resource group in the selected subscription. Example: rg-contoso-observability. Leave empty to use the SRE agent resource group. Ignored in Create new mode.')
 param applicationInsightsResourceGroupName string = ''
 
 @description('Use existing only: Application Insights component name, not an ID or connection string. Required in reuse mode; ignored in Create new mode. New component is named <agentName>-appi.')
@@ -59,13 +59,15 @@ param modelProvider string
 @maxLength(128)
 param modelName string
 
-@description('Optional: one existing workload resource group in this subscription, separate from the agent group. Example: rg-contoso-orders-dev. Leave empty for no workload scope.')
+@description('One existing workload resource group in this subscription. Example: rg-contoso-orders-dev. Leave empty to use the SRE agent resource group. Reader roles are assigned only when Assign Workload Reader Roles is true.')
 param workloadResourceGroupName string = ''
 
 @description('Keep false initially. true grants Reader and Log Analytics Reader to both agent identities on the named workload group. Requires role-assignment permission. Does not grant agent-user roles or write roles. false does not remove existing grants.')
 param assignWorkloadReaderRoles bool = false
 
 var createMonitoring = monitoringMode == 'Create new'
+var resolvedApplicationInsightsResourceGroupName = empty(applicationInsightsResourceGroupName) ? resourceGroup().name : applicationInsightsResourceGroupName
+var resolvedWorkloadResourceGroupName = empty(workloadResourceGroupName) ? resourceGroup().name : workloadResourceGroupName
 var resourceTags = {
   environment: environment
   managedBy: 'azure-sre-agent-starter'
@@ -115,9 +117,9 @@ module foundation '../bicep/main.bicep' = {
   params: {
     agentName: agentName
     location: location
-    workloadResourceGroupName: workloadResourceGroupName
+    workloadResourceGroupName: resolvedWorkloadResourceGroupName
     assignWorkloadReaderRoles: assignWorkloadReaderRoles
-    applicationInsightsResourceGroupName: createMonitoring ? resourceGroup().name : applicationInsightsResourceGroupName
+    applicationInsightsResourceGroupName: createMonitoring ? resourceGroup().name : resolvedApplicationInsightsResourceGroupName
     applicationInsightsName: createMonitoring ? applicationInsights.name : applicationInsightsName
     modelProvider: modelProvider
     modelName: modelName

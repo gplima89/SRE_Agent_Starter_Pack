@@ -29,7 +29,12 @@ function Get-Resources {
 Assert-True ($template.'$schema' -eq 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#') 'resource-group Portal scope'
 Assert-True ($template.parameters.environment.defaultValue -eq 'dev') 'dev default'
 Assert-True (-not $template.parameters.assignWorkloadReaderRoles.defaultValue) 'reader opt-in defaults false'
-Assert-True ($template.parameters.workloadResourceGroupName.defaultValue -eq '') 'workload scope defaults empty'
+Assert-True ($template.parameters.workloadResourceGroupName.defaultValue -eq '') 'workload input defaults empty for agent-group fallback'
+foreach ($name in @('applicationInsightsResourceGroupName', 'workloadResourceGroupName')) {
+    $variableName = 'resolved' + [char]::ToUpperInvariant($name[0]) + $name.Substring(1)
+    $expectedExpression = "[if(empty(parameters('$name')), resourceGroup().name, parameters('$name'))]"
+    Assert-True ($template.variables[$variableName] -ceq $expectedExpression) "empty $name uses agent group; explicit name preserved"
+}
 Assert-True (-not $template.parameters.ContainsKey('tags')) 'no raw JSON tag input'
 foreach ($name in $template.parameters.Keys) {
     Assert-True (-not [string]::IsNullOrWhiteSpace($template.parameters[$name].metadata.description)) "help for $name"
@@ -82,7 +87,9 @@ $foundation = @($template.resources | Where-Object name -EQ 'sre-foundation')[0]
 Assert-True ($foundation.dependsOn -contains $componentId) 'foundation waits for new component'
 Assert-True ($foundation.properties.mode -eq 'Incremental') 'reuse deployments do not delete monitoring'
 Assert-True ($foundation.properties.parameters.applicationInsightsName -ceq "[if(variables('createMonitoring'), createObject('value', format('{0}-appi', parameters('agentName'))), createObject('value', parameters('applicationInsightsName')))]") 'create name or existing name passed lazily'
-Assert-True ($foundation.properties.parameters.applicationInsightsResourceGroupName -ceq "[if(variables('createMonitoring'), createObject('value', resourceGroup().name), createObject('value', parameters('applicationInsightsResourceGroupName')))]") 'create group or existing group passed lazily'
+Assert-True ($foundation.properties.parameters.applicationInsightsResourceGroupName -ceq "[if(variables('createMonitoring'), createObject('value', resourceGroup().name), createObject('value', variables('resolvedApplicationInsightsResourceGroupName')))]") 'create group or resolved existing group passed lazily'
+Assert-True ($foundation.properties.parameters.workloadResourceGroupName.value -ceq "[variables('resolvedWorkloadResourceGroupName')]") 'resolved workload group passed to foundation'
+Assert-True ($foundation.properties.parameters.assignWorkloadReaderRoles.value -ceq "[parameters('assignWorkloadReaderRoles')]") 'reader assignments remain explicit opt-in'
 foreach ($name in @('applicationInsightsName', 'applicationInsightsResourceGroupName')) {
     Assert-True ($foundation.properties.template.parameters[$name].minLength -eq 1) "foundation rejects blank reuse input: $name"
 }

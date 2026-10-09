@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "3704411091667447341"
+      "templateHash": "8463993406216017628"
     },
     "description": "SRE Agent lab foundation. Review/Low access only. Creates monitoring by default or reuses existing Application Insights. Runtime readiness, model availability and cleanup are not verified. See docs/portal-deployment.md before deployment."
   },
@@ -90,14 +90,14 @@
         "Use existing"
       ],
       "metadata": {
-        "description": "Create new creates a billable Log Analytics workspace and Application Insights in the agent group. Use existing leaves monitoring unchanged and requires both existing component inputs below. Review costs, network policy and cleanup ownership first."
+        "description": "Create new creates a billable Log Analytics workspace and Application Insights in the agent group. Use existing leaves monitoring unchanged and requires an existing component name; an empty component resource group uses the agent group. Review costs, network policy and cleanup ownership first."
       }
     },
     "applicationInsightsResourceGroupName": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Use existing only: Application Insights resource group in the selected subscription. Example: rg-contoso-observability. Required in reuse mode; ignored in Create new mode."
+        "description": "Use existing only: Application Insights resource group in the selected subscription. Example: rg-contoso-observability. Leave empty to use the SRE agent resource group. Ignored in Create new mode."
       }
     },
     "applicationInsightsName": {
@@ -127,7 +127,7 @@
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "Optional: one existing workload resource group in this subscription, separate from the agent group. Example: rg-contoso-orders-dev. Leave empty for no workload scope."
+        "description": "One existing workload resource group in this subscription. Example: rg-contoso-orders-dev. Leave empty to use the SRE agent resource group. Reader roles are assigned only when Assign Workload Reader Roles is true."
       }
     },
     "assignWorkloadReaderRoles": {
@@ -140,6 +140,8 @@
   },
   "variables": {
     "createMonitoring": "[equals(parameters('monitoringMode'), 'Create new')]",
+    "resolvedApplicationInsightsResourceGroupName": "[if(empty(parameters('applicationInsightsResourceGroupName')), resourceGroup().name, parameters('applicationInsightsResourceGroupName'))]",
+    "resolvedWorkloadResourceGroupName": "[if(empty(parameters('workloadResourceGroupName')), resourceGroup().name, parameters('workloadResourceGroupName'))]",
     "resourceTags": {
       "environment": "[parameters('environment')]",
       "managedBy": "azure-sre-agent-starter",
@@ -209,12 +211,12 @@
             "value": "[parameters('location')]"
           },
           "workloadResourceGroupName": {
-            "value": "[parameters('workloadResourceGroupName')]"
+            "value": "[variables('resolvedWorkloadResourceGroupName')]"
           },
           "assignWorkloadReaderRoles": {
             "value": "[parameters('assignWorkloadReaderRoles')]"
           },
-          "applicationInsightsResourceGroupName": "[if(variables('createMonitoring'), createObject('value', resourceGroup().name), createObject('value', parameters('applicationInsightsResourceGroupName')))]",
+          "applicationInsightsResourceGroupName": "[if(variables('createMonitoring'), createObject('value', resourceGroup().name), createObject('value', variables('resolvedApplicationInsightsResourceGroupName')))]",
           "applicationInsightsName": "[if(variables('createMonitoring'), createObject('value', format('{0}-appi', parameters('agentName'))), createObject('value', parameters('applicationInsightsName')))]",
           "modelProvider": {
             "value": "[parameters('modelProvider')]"
