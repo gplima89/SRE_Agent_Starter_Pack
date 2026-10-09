@@ -1,3 +1,16 @@
+<#
+.SYNOPSIS
+Validates starter configuration against its schema and cross-field safety rules.
+.DESCRIPTION
+Checks tag consistency and workload scope boundaries without printing configuration
+values or applying Azure settings. A passing result does not establish deployment readiness.
+.PARAMETER ConfigPath
+Path to the starter configuration JSON file to validate.
+.PARAMETER RequireDeploymentInputs
+Also requires the listed deployment-intent fields, one workload scope and retention.
+This remains an offline completeness check, not a live prerequisite check.
+#>
+
 #Requires -Version 7.0
 [CmdletBinding()]
 param(

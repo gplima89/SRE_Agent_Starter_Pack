@@ -18,12 +18,14 @@ $baseline = @{
     dataClassification = 'internal'
 }
 $script:checks = 0
+# Throws on a failed condition; otherwise counts and reports the named check.
 function Assert-True {
     param([bool]$Condition, [string]$Name)
     if (-not $Condition) { throw "FAIL: $Name" }
     $script:checks++
     Write-Output "PASS: $Name"
 }
+# Serializes a synthetic setup candidate to the temporary JSON file consumed by the generator.
 function Write-Input {
     param([hashtable]$Candidate)
     [IO.File]::WriteAllText($inputPath, ($Candidate | ConvertTo-Json -Depth 10))

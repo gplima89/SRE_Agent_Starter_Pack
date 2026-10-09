@@ -8,6 +8,7 @@ $validator = Join-Path $root 'scripts/powershell/Test-Configuration.ps1'
 $baseline = Get-Content (Join-Path $root 'config/dev.json') -Raw
 $tempPath = Join-Path ([IO.Path]::GetTempPath()) "sre-config-$([guid]::NewGuid()).json"
 $passed = 0
+# Mutates a fresh baseline, verifies the validator rejects it, and counts the passing negative test.
 function Assert-Rejected {
     param([string]$Name, [scriptblock]$Mutation)
     $candidate = $baseline | ConvertFrom-Json

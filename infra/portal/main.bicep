@@ -54,7 +54,7 @@ param applicationInsightsName string = ''
 @maxLength(128)
 param modelProvider string
 
-@description('Exact model identifier confirmed available for the chosen provider and region. Not a display label. No model is selected automatically.')
+@description('Documented model-name examples: gpt-5, claude-opus-4-5, claude-sonnet-4-5. These are examples, not a supported-value list; none is guaranteed in every region. Confirm the exact provider/model combination for your subscription and region before deploying. No model is selected automatically.')
 @minLength(1)
 @maxLength(128)
 param modelName string

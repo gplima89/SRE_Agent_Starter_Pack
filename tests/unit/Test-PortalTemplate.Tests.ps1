@@ -7,12 +7,14 @@ $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 & (Join-Path $root 'scripts/powershell/Build-PortalTemplate.ps1') -Check
 $template = Get-Content (Join-Path $root 'infra/portal/azuredeploy.json') -Raw | ConvertFrom-Json -AsHashtable
 $script:checks = 0
+# Throws on a failed condition; otherwise counts and reports the named check.
 function Assert-True {
     param([bool]$Condition, [string]$Name)
     if (-not $Condition) { throw "FAIL: $Name" }
     $script:checks++
     Write-Output "PASS: $Name"
 }
+# Walks array or dictionary resources and embedded templates, rejecting remote template dependencies.
 function Get-Resources {
     param([hashtable]$Template)
     $direct = if ($Template.resources -is [System.Collections.IDictionary]) { $Template.resources.Values } else { $Template.resources }
@@ -36,6 +38,11 @@ foreach ($name in $template.parameters.Keys) {
 foreach ($name in @('agentName', 'location', 'modelProvider', 'modelName')) {
     Assert-True (-not $template.parameters[$name].ContainsKey('defaultValue')) "explicit $name"
 }
+$modelHelp = $template.parameters.modelName.metadata.description
+foreach ($example in @('gpt-5', 'claude-opus-4-5', 'claude-sonnet-4-5')) {
+    Assert-True ($modelHelp.Contains($example)) "documented model-name example: $example"
+}
+Assert-True ($modelHelp.Contains('none is guaranteed in every region')) 'model examples do not promise universal availability'
 Assert-True ($template.parameters.monitoringMode.defaultValue -eq 'Create new') 'create monitoring by default'
 Assert-True (($template.parameters.monitoringMode.allowedValues -join ',') -eq 'Create new,Use existing') 'only create or reuse monitoring modes'
 Assert-True ($template.variables.createMonitoring -ceq "[equals(parameters('monitoringMode'), 'Create new')]") 'reuse mode disables monitoring creation'

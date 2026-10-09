@@ -1,3 +1,13 @@
+<#
+.SYNOPSIS
+Compiles the Portal Bicep wrapper into the checked-in ARM template.
+.DESCRIPTION
+Uses the locally installed Azure CLI Bicep compiler without Azure login or deployment.
+Regeneration replaces the artifact atomically; Check compares compiled content without writing.
+.PARAMETER Check
+Fails when the checked-in artifact is missing or differs from the current compilation.
+#>
+
 #Requires -Version 7.0
 [CmdletBinding(SupportsShouldProcess)]
 param([switch]$Check)

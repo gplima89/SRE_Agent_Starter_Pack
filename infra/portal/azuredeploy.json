@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "2552478464223234101"
+      "templateHash": "3704411091667447341"
     },
     "description": "SRE Agent lab foundation. Review/Low access only. Creates monitoring by default or reuses existing Application Insights. Runtime readiness, model availability and cleanup are not verified. See docs/portal-deployment.md before deployment."
   },
@@ -120,7 +120,7 @@
       "minLength": 1,
       "maxLength": 128,
       "metadata": {
-        "description": "Exact model identifier confirmed available for the chosen provider and region. Not a display label. No model is selected automatically."
+        "description": "Documented model-name examples: gpt-5, claude-opus-4-5, claude-sonnet-4-5. These are examples, not a supported-value list; none is guaranteed in every region. Confirm the exact provider/model combination for your subscription and region before deploying. No model is selected automatically."
       }
     },
     "workloadResourceGroupName": {

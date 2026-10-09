@@ -9,12 +9,14 @@ $output = & az bicep build --file $templatePath --stdout --only-show-errors
 if ($LASTEXITCODE -ne 0) { throw 'Bicep compilation failed.' }
 $template = ($output -join "`n") | ConvertFrom-Json -AsHashtable
 $script:checks = 0
+# Throws on a failed condition; otherwise counts and reports the named check.
 function Assert-True {
     param([bool]$Condition, [string]$Name)
     if (-not $Condition) { throw "FAIL: $Name" }
     $script:checks++
     Write-Output "PASS: $Name"
 }
+# Returns immediate ARM resources from either an array or a languageVersion 2 resource dictionary.
 function Get-DirectResources {
     param([hashtable]$Template)
     if ($Template.resources -is [System.Collections.IDictionary]) {
@@ -23,6 +25,7 @@ function Get-DirectResources {
         $Template.resources
     }
 }
+# Recursively enumerates resources from the root template and embedded deployment templates.
 function Get-NestedResources {
     param([hashtable]$Template)
     foreach ($resource in (Get-DirectResources -Template $Template)) {

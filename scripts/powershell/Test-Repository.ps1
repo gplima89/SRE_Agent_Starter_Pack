@@ -1,3 +1,14 @@
+<#
+.SYNOPSIS
+Runs lightweight repository checks without contacting Azure.
+.DESCRIPTION
+Checks PowerShell syntax, local Markdown links and selected credential patterns,
+excluding generated and local configuration folders. Throws on findings; this is
+not a dedicated secret scanner and does not validate external links or runtime behavior.
+.PARAMETER RepositoryRoot
+Repository directory to scan. Defaults to the root containing this script.
+#>
+
 #Requires -Version 7.0
 [CmdletBinding()]
 param(

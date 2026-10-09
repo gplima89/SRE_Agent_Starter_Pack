@@ -1,3 +1,17 @@
+<#
+.SYNOPSIS
+Generates an offline configuration bundle from validated setup inputs.
+.DESCRIPTION
+Preserves fixed safety defaults and creates starter JSON, ARM parameters, Bicep
+parameters and a deployment-target record. Validates staged files before moving
+them into a new output directory. Refuses overwrite and performs no Azure operations.
+WhatIf previews the destination without creating the bundle.
+.PARAMETER SetupPath
+Path to setup JSON conforming to the setup schema and semantic safety rules.
+.PARAMETER OutputDirectory
+New destination directory. Defaults to config/local/<environment> in the repository.
+#>
+
 #Requires -Version 7.0
 [CmdletBinding(SupportsShouldProcess)]
 param(
