@@ -5,9 +5,9 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "18353083708045455449"
+      "templateHash": "2552478464223234101"
     },
-    "description": "SRE Agent lab foundation. Review/Low access only. Existing Application Insights required. Runtime readiness, model availability and cleanup are not verified. See docs/portal-deployment.md before deployment."
+    "description": "SRE Agent lab foundation. Review/Low access only. Creates monitoring by default or reuses existing Application Insights. Runtime readiness, model availability and cleanup are not verified. See docs/portal-deployment.md before deployment."
   },
   "parameters": {
     "agentName": {
@@ -82,18 +82,29 @@
         "description": "Organization-approved classification tag. This label does not enforce data protection."
       }
     },
+    "monitoringMode": {
+      "type": "string",
+      "defaultValue": "Create new",
+      "allowedValues": [
+        "Create new",
+        "Use existing"
+      ],
+      "metadata": {
+        "description": "Create new creates a billable Log Analytics workspace and Application Insights in the agent group. Use existing leaves monitoring unchanged and requires both existing component inputs below. Review costs, network policy and cleanup ownership first."
+      }
+    },
     "applicationInsightsResourceGroupName": {
       "type": "string",
-      "minLength": 1,
+      "defaultValue": "",
       "metadata": {
-        "description": "Existing Application Insights resource group in the selected subscription. Example: rg-contoso-observability. Component is reused, not created. It cannot be inside a new empty agent group."
+        "description": "Use existing only: Application Insights resource group in the selected subscription. Example: rg-contoso-observability. Required in reuse mode; ignored in Create new mode."
       }
     },
     "applicationInsightsName": {
       "type": "string",
-      "minLength": 1,
+      "defaultValue": "",
       "metadata": {
-        "description": "Existing Application Insights component name. Example: appi-contoso-sre. Enter the name, not an ID or connection string. Used for agent telemetry, not workload log connectors."
+        "description": "Use existing only: Application Insights component name, not an ID or connection string. Required in reuse mode; ignored in Create new mode. New component is named <agentName>-appi."
       }
     },
     "modelProvider": {
@@ -101,7 +112,7 @@
       "minLength": 1,
       "maxLength": 128,
       "metadata": {
-        "description": "Exact provider identifier confirmed in the SRE Agent creation experience for this subscription and region. No universal supported-value list is verified here; do not guess or use a placeholder."
+        "description": "Provider options may include Anthropic and Azure OpenAI, depending on your subscription and region. These are display names, not verified ARM input values. Enter the exact provider identifier confirmed for your deployment; do not guess or use a placeholder."
       }
     },
     "modelName": {
@@ -127,7 +138,60 @@
       }
     }
   },
+  "variables": {
+    "createMonitoring": "[equals(parameters('monitoringMode'), 'Create new')]",
+    "resourceTags": {
+      "environment": "[parameters('environment')]",
+      "managedBy": "azure-sre-agent-starter",
+      "workload": "[parameters('workloadName')]",
+      "costCenter": "[parameters('costCenter')]",
+      "businessOwner": "[parameters('businessOwner')]",
+      "technicalOwner": "[parameters('technicalOwner')]",
+      "dataClassification": "[parameters('dataClassification')]"
+    }
+  },
   "resources": [
+    {
+      "condition": "[variables('createMonitoring')]",
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2025-07-01",
+      "name": "[format('{0}-logs', parameters('agentName'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('resourceTags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30,
+        "features": {
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        },
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "condition": "[variables('createMonitoring')]",
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[format('{0}-appi', parameters('agentName'))]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "tags": "[variables('resourceTags')]",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('agentName')))]",
+        "IngestionMode": "LogAnalytics",
+        "Flow_Type": "Bluefield",
+        "Request_Source": "rest",
+        "DisableIpMasking": false,
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('{0}-logs', parameters('agentName')))]"
+      ]
+    },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
@@ -150,12 +214,8 @@
           "assignWorkloadReaderRoles": {
             "value": "[parameters('assignWorkloadReaderRoles')]"
           },
-          "applicationInsightsResourceGroupName": {
-            "value": "[parameters('applicationInsightsResourceGroupName')]"
-          },
-          "applicationInsightsName": {
-            "value": "[parameters('applicationInsightsName')]"
-          },
+          "applicationInsightsResourceGroupName": "[if(variables('createMonitoring'), createObject('value', resourceGroup().name), createObject('value', parameters('applicationInsightsResourceGroupName')))]",
+          "applicationInsightsName": "[if(variables('createMonitoring'), createObject('value', format('{0}-appi', parameters('agentName'))), createObject('value', parameters('applicationInsightsName')))]",
           "modelProvider": {
             "value": "[parameters('modelProvider')]"
           },
@@ -163,15 +223,7 @@
             "value": "[parameters('modelName')]"
           },
           "tags": {
-            "value": {
-              "environment": "[parameters('environment')]",
-              "managedBy": "azure-sre-agent-starter",
-              "workload": "[parameters('workloadName')]",
-              "costCenter": "[parameters('costCenter')]",
-              "businessOwner": "[parameters('businessOwner')]",
-              "technicalOwner": "[parameters('technicalOwner')]",
-              "dataClassification": "[parameters('dataClassification')]"
-            }
+            "value": "[variables('resourceTags')]"
           }
         },
         "template": {
@@ -1851,7 +1903,10 @@
             }
           }
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', format('{0}-appi', parameters('agentName')))]"
+      ]
     }
   ],
   "outputs": {
@@ -1867,7 +1922,7 @@
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'sre-foundation'), '2025-04-01').outputs.systemAssignedPrincipalId.value]"
     },
-    "reusedApplicationInsightsId": {
+    "applicationInsightsId": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Resources/deployments', 'sre-foundation'), '2025-04-01').outputs.reusedApplicationInsightsId.value]"
     }

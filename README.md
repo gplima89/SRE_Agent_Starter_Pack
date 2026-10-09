@@ -19,8 +19,11 @@ region, model, policy, or permission checks. Use an approved disposable environm
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgplima89%2FSRE_Agent_Starter_Pack%2Fmain%2Finfra%2Fportal%2Fazuredeploy.json)
 
 Select your subscription, choose an existing dedicated agent resource group or
-**Create new**, and fill in the parameters in Azure Portal. Existing Application
-Insights in the same subscription is required. Keep workload reader grants off
+**Create new**, and fill in the parameters in Azure Portal. **Monitoring Mode**
+defaults to **Create new**, provisioning Application Insights and a Log Analytics
+workspace in the agent group. Leave the existing telemetry fields empty for this
+mode. Choose **Use existing** to reuse a component in the same subscription.
+Monitoring ingestion/retention may incur charges. Keep workload reader grants off
 initially. Git, PowerShell, and the local HTML form are not required for this route.
 
 The button works only after these files are published to the public GitHub repository.
@@ -35,6 +38,8 @@ reproducible deployments. Portal inputs do not update repository configuration f
 - Offline validation and regression tests; no Azure login or secrets required.
 - A compiled resource-group Bicep baseline using the documented 2026-01-01
 	agent contract, pinned identity/role AVMs, and existing telemetry.
+- A Portal wrapper with optional monitoring creation; offline configuration paths
+	still require existing telemetry.
 - A documented release gate rather than invented Azure APIs or unchecked recipes.
 
 The schema is **not** an Azure SRE Agent configuration upload. Selecting a
